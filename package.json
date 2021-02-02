@@ -1,0 +1,11 @@
+{
+  "name": "stockbot",
+  "version": "0.1.0",
+  "description": "Simulator for automated/algorithmic trading strategies on real-world historical data",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "UNLICENSED"
+}
