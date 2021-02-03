@@ -11,6 +11,7 @@
   "dependencies": {
     "csv": "^5.3.2",
     "node-fetch": "^2.6.1",
-    "stocks.js": "0.0.19"
+    "stocks.js": "0.0.19",
+    "technicalindicators": "^3.1.0"
   }
 }

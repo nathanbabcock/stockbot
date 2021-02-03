@@ -6,8 +6,8 @@
 
 ## Plan
 - [X] Download & cache historical price data CSVs from Yahoo Finance and/or Alpha Vantage
-- [ ] Code a technical indicator (MACD) and verify it works
-- [ ] Simulate automated MACD trading on entire stock history and analyze profits
+- [X] Code a technical indicator (MACD) and verify it works
+- [X] Simulate automated MACD trading on entire stock history and analyze profits
 - [ ] Repeat for all 3000+ stocks and find total return
 - [ ] Cluster analysis for most & least profitable stocks
 - [ ] `argmax` for technical indicator parameters
