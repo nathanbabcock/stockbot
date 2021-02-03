@@ -8,10 +8,10 @@
 - [X] Download & cache historical price data CSVs from Yahoo Finance and/or Alpha Vantage
 - [X] Code a technical indicator (MACD) and verify it works
 - [X] Simulate automated MACD trading on entire stock history and analyze profits
-- [ ] Download entire Yahoo Finance stock price history database
+- [X] Download entire Yahoo Finance stock price history database
   - [X] Identify 404 stocks
   - [X] Use a VPN just in case
-- [ ] Repeat MACD for all 3000+ stocks and generate total return report
+- [X] Repeat MACD for all 3000+ stocks and generate total return report
 - [ ] Write naive strategy
 - [ ] Repeat Naive strategy for all 3000+ stocks and generate report
 - [ ] Cluster analysis for most & least profitable stocks

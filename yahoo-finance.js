@@ -79,7 +79,7 @@ async function getRandomStock() {
  * @param {*} stockData 
  * @returns {*} stockData with MACD added
  */
-function processMACD(stockData) {
+function addMACD(stockData) {
   const values = stockData.map(x => x.Close);
   const slowPeriod = 26
   const macd = technicalIndicators.macd({
@@ -109,7 +109,7 @@ function simulateTradingMACD(stockData) {
       investment += day.Close;
       shares++;
       bought_price = day.Close;
-      console.log(`${day.Date.toLocaleDateString()}: Bought 1 share at $${day.Close.toFixed(2)}`);
+      // console.log(`${day.Date.toLocaleDateString()}: Bought 1 share at $${day.Close.toFixed(2)}`);
     }
 
     // Sell
@@ -119,17 +119,19 @@ function simulateTradingMACD(stockData) {
     const STOP_LOSS = day.Close <= bought_price * 0.9;
     if (shares > 0 && ((MACD_SELL_SIGNAL && PROFITABLE) || STOP_LOSS || LAST_DAY )) {
       profit += shares * day.Close;
-      console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)`);
+      // console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)`);
       shares = 0;
     }
   });
 
-  console.log(`$${profit.toFixed(2)} (${((profit / investment) * 100).toFixed(2)}% return)`);
+  let roi = ((profit / investment) * 100).toFixed(2);
+  console.log(`$${profit.toFixed(2)} (${roi}% return)`);
+  return { investment, profit, roi };
 }
 
 async function harvestData() {
   let manifest = await readCSV('stock-data/NYSE_manifest.csv');
-  let failed = [];
+  let failed = ['Symbol'];
 
   for (const stock of manifest) {
     try {
@@ -139,12 +141,44 @@ async function harvestData() {
     }
   };
 
-  const failed_manifest = 'stock-data/404.txt';
-  await fsp.writeFile(failed_manifest, failed.map(x => x.Symbol).join('\n'));
-  console.log(`Wrote ${failed.length} failed entries to ${failed_manifest}`)
+  const failedManifest = 'stock-data/404.csv';
+  await fsp.writeFile(failedManifest, failed.map(x => x.Symbol).join('\n'));
+  console.log(`Wrote ${failed.length} failed entries to ${failedManifest}`)
 }
 
-harvestData();
+
+async function generateReportMACD() {
+  let manifest = await readCSV('stock-data/NYSE_manifest.csv');
+  let blacklist = (await readCSV('stock-data/404.csv')).map(x => x.Symbol);
+  let report = 'symbol,investment,profit,roi\n';
+  let n = 0;
+
+  let total_investment = 0;
+  let total_profit = 0;
+  let total_roi = 0;
+
+  // Simulation
+  for (const stock of manifest) {
+    if (blacklist.includes(stock.Symbol)) continue;
+    let stockData = addMACD(await getStockData(stock.Symbol));
+    const simulation = await simulateTradingMACD(stockData);
+    report += `${stock.Symbol},${simulation.investment},${simulation.profit},${simulation.roi}\n`;
+    total_investment += simulation.investment;
+    total_profit += simulation.profit;
+    n++;
+  }
+
+  // Compute totals
+  total_roi = ((total_profit / total_investment) * 100).toFixed(2);
+  report += `__TOTAL__,${total_investment},${total_profit},${total_roi}`;
+
+  // Write output
+  const reportName = 'reports/macd.csv';
+  await fsp.writeFile(reportName, report);
+  console.log(`Wrote ${n} simulation results to ${reportName}`);
+}
+
+generateReportMACD();
 
 // async function main() {
 //   const stock = await getRandomStock();
