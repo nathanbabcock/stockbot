@@ -129,6 +129,30 @@ function simulateTradingMACD(stockData) {
   return { investment, profit, roi };
 }
 
+function simulateTradingMaxHold(stockData) {
+  let investment = 0;
+  let shares = 0;
+  let profit = 0;
+
+  // Buy
+  const firstDay = stockData[0];
+  profit -= firstDay.Close;
+  investment += firstDay.Close;
+  shares++;
+
+  // Sell
+  const lastDay = stockData[stockData.length - 1];
+  profit += shares * lastDay.Close;
+  shares = 0;
+
+  if (isNaN(profit)) profit = 0;
+  if (isNaN(investment)) investment = 0;
+
+  let roi = ((profit / investment) * 100).toFixed(2);
+  console.log(`$${profit.toFixed(2)} (${roi}% return)`);
+  return { investment, profit, roi };
+}
+
 async function harvestData() {
   let manifest = await readCSV('stock-data/NYSE_manifest.csv');
   let failed = ['Symbol'];
@@ -146,8 +170,7 @@ async function harvestData() {
   console.log(`Wrote ${failed.length} failed entries to ${failedManifest}`)
 }
 
-
-async function generateReportMACD() {
+async function generateReport(simFunc, reportId) {
   let manifest = await readCSV('stock-data/NYSE_manifest.csv');
   let blacklist = (await readCSV('stock-data/404.csv')).map(x => x.Symbol);
   let report = 'symbol,investment,profit,roi\n';
@@ -161,7 +184,7 @@ async function generateReportMACD() {
   for (const stock of manifest) {
     if (blacklist.includes(stock.Symbol)) continue;
     let stockData = addMACD(await getStockData(stock.Symbol));
-    const simulation = await simulateTradingMACD(stockData);
+    const simulation = await simFunc(stockData);
     report += `${stock.Symbol},${simulation.investment},${simulation.profit},${simulation.roi}\n`;
     total_investment += simulation.investment;
     total_profit += simulation.profit;
@@ -173,23 +196,16 @@ async function generateReportMACD() {
   report += `__TOTAL__,${total_investment},${total_profit},${total_roi}`;
 
   // Write output
-  const reportName = 'reports/macd.csv';
+  const reportName = `reports/${reportId}.csv`;
   await fsp.writeFile(reportName, report);
   console.log(`Wrote ${n} simulation results to ${reportName}`);
 }
 
-generateReportMACD();
+generateReport(simulateTradingMaxHold, 'max-hold');
 
-// async function main() {
-//   const stock = await getRandomStock();
-//   stock.Symbol = 'SHO.PRE';
-//   stock.Name = undefined;
-//   console.log(`Buying ${stock.Symbol} - ${stock.Name}`);
-//   let stockData = await getStockData(stock.Symbol);
-//   const thisYear = new Date().getFullYear();
-//   // stockData = stockData.filter(day => day.Date.getFullYear() >= thisYear - 1)
-//   stockData = processMACD(stockData);
-//   simulateTradingMACD(stockData);
-// }
-
-// main();
+(async function main() {
+  const stock = 'MSFT';
+  console.log(`Buying ${stock}`);
+  let stockData = await getStockData(stock);
+  simulateTradingMaxHold(stockData);
+})//();
