@@ -5,14 +5,14 @@
 - All output is cached and built on
 
 ## Plan
-- Download & cache historical price data CSVs from Yahoo Finance and/or Alpha Vantage
-- Code a technical indicator (MACD) and verify it works
-- Simulate automated MACD trading on entire stock history and analyze profits
-- Repeat for all 3000+ stocks and find total return
-- Cluster analysis for most & least profitable stocks
-- `argmax` for technical indicator parameters
-- Rinse and repeat for **as many technical indicators as possible**
-- Tournament-style/survival of the fittest competition between determinstic trading strategies
+- [X] Download & cache historical price data CSVs from Yahoo Finance and/or Alpha Vantage
+- [ ] Code a technical indicator (MACD) and verify it works
+- [ ] Simulate automated MACD trading on entire stock history and analyze profits
+- [ ] Repeat for all 3000+ stocks and find total return
+- [ ] Cluster analysis for most & least profitable stocks
+- [ ] `argmax` for technical indicator parameters
+- [ ] Rinse and repeat for **as many technical indicators as possible**
+- [ ] Tournament-style/survival of the fittest competition between determinstic trading strategies
 
 ## Naïve strategies
 - Buy and hold one of every stock in existence forever
