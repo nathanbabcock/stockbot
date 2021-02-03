@@ -38,10 +38,15 @@ async function readCSV(path) {
 async function downloadStockData(symbol) {
   console.log(`Downloading ${symbol}`);
   const url = `https://query1.finance.yahoo.com/v7/finance/download/${symbol}?period1=511056000&period2=1612310400&interval=1d&events=history&includeAdjustedClose=true`;
-  const file = fs.createWriteStream(`stock-data/${symbol}.csv`);
   const res = await fetch(url);
 
   await new Promise((resolve, reject) => {
+    if (res.status !== 200) {
+      console.error(`Status code ${res.status} for symbol ${symbol}`);
+      return reject();
+    } 
+    
+    const file = fs.createWriteStream(`stock-data/${symbol}.csv`);
     res.body.pipe(file);
     res.body.on('error', reject);
     file.on('finish', resolve);
@@ -122,15 +127,35 @@ function simulateTradingMACD(stockData) {
   console.log(`$${profit.toFixed(2)} (${((profit / investment) * 100).toFixed(2)}% return)`);
 }
 
-async function main() {
-  const stock = await getRandomStock();
-  console.log(`Buying ${stock.Symbol} - ${stock.Name}`);
-  // const symbol = 'MSFT';
-  let stockData = await getStockData(stock.Symbol);
-  const thisYear = new Date().getFullYear();
-  stockData = stockData.filter(day => day.Date.getFullYear() >= thisYear - 1)
-  stockData = processMACD(stockData);
-  simulateTradingMACD(stockData);
+async function harvestData() {
+  let manifest = await readCSV('stock-data/NYSE_manifest.csv');
+  let failed = [];
+
+  for (const stock of manifest) {
+    try {
+      await getStockData(stock.Symbol);
+    } catch {
+      failed.push(stock);
+    }
+  };
+
+  const failed_manifest = 'stock-data/404.txt';
+  await fsp.writeFile(failed_manifest, failed.map(x => x.Symbol).join('\n'));
+  console.log(`Wrote ${failed.length} failed entries to ${failed_manifest}`)
 }
 
-main();
+harvestData();
+
+// async function main() {
+//   const stock = await getRandomStock();
+//   stock.Symbol = 'SHO.PRE';
+//   stock.Name = undefined;
+//   console.log(`Buying ${stock.Symbol} - ${stock.Name}`);
+//   let stockData = await getStockData(stock.Symbol);
+//   const thisYear = new Date().getFullYear();
+//   // stockData = stockData.filter(day => day.Date.getFullYear() >= thisYear - 1)
+//   stockData = processMACD(stockData);
+//   simulateTradingMACD(stockData);
+// }
+
+// main();
