@@ -22,11 +22,11 @@
 - [ ] Tournament-style/survival of the fittest competition between determinstic trading strategies
 
 ## Naïve strategies
-- Buy and hold one of every stock in existence forever
-- Buy at the beginning of every rise, sell at the beginning of every dip
+- [X] (max-hold) Buy and hold one of every stock in existence forever
+- [X] (reactive) Buy at the beginning of every rise, sell at the beginning of every dip
+- Buy and hold N of the least expensive penny stocks
 - Buy and hold the most profitable ETFs
 - Buy and hold only the N most expensive stocks at all times
-- Buy and hold N of the least expensive penny stocks
 - Buy and sell N random stocks at random times
 - Buy N stocks in the M sectors with the highest growth in the past Q time period
 
