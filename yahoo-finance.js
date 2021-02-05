@@ -6,6 +6,7 @@ import simulateTradingRSI from './strategies/rsi.js';
 import simulateTradingMACD from './strategies/macd.js';
 import simulateTradingMACDLong from './strategies/macd-long.js';
 import simulateTradingReactive from './strategies/reactive.js';
+import simulateTradingMACD_RSI from './strategies/macd-rsi.js';
 
 const chooseRandom = (array) => array[Math.floor(Math.random() * array.length)];
 
@@ -103,6 +104,7 @@ async function generateReport(simFunc, reportId) {
     if (blacklist.includes(stock.Symbol)) continue;
     let stockData = await getStockData(stock.Symbol)
     const simulation = await simFunc(stockData);
+
     report += `${stock.Symbol},${simulation.investment},${simulation.profit},${simulation.roi}\n`;
     total_investment += simulation.investment;
     total_profit += simulation.profit;
@@ -119,12 +121,11 @@ async function generateReport(simFunc, reportId) {
   console.log(`Wrote ${n} simulation results to ${reportName}`);
 }
 
-generateReport(simulateTradingRSI, 'rsi');
+generateReport(simulateTradingMACD_RSI, 'macd-rsi');
 
 (async function main() {
   const stock = 'AMZN';
   console.log(`Buying ${stock}`);
   let stockData = await getStockData(stock);
-  // simulateTradingRSI(stockData);
-  simulateTradingMACD(stockData);
+  simulateTradingMACD_RSI(stockData);
 })//();

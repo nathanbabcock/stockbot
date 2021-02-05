@@ -1,24 +1,9 @@
-import { MACD } from 'technicalindicators';
+import { addMACD } from './macd.js';
+import { addRSI } from './rsi.js';
 
-export function addMACD(stockData) {
-  const values = stockData.map(x => x.Close);
-  const fastPeriod = 12;
-  const slowPeriod = 26;
-  const signalPeriod = 9;
-  const macd = MACD.calculate({
-    values,
-    fastPeriod,
-    slowPeriod,
-    signalPeriod,
-    SimpleMAOscillator: false,
-    SimpleMASignal: false
-  });
-  macd.forEach((macd, index) => index + slowPeriod < stockData.length && (stockData[index + slowPeriod].macd = macd));
-  return stockData;
-}
-
-export default function simulateTradingMACD(stockData) {
+export default function simulateTradingMACD_RSI(stockData) {
   stockData = addMACD(stockData);
+  stockData = addRSI(stockData);
 
   let investment = 0;
   let shares = 0;
@@ -27,9 +12,13 @@ export default function simulateTradingMACD(stockData) {
 
   stockData.forEach((day, index) => {
     if (!day.macd || !stockData[index-1].macd) { return; }
+    if (!day.rsi) { return; }
+    if (!day.Close && day.Close !== 0) { return; }
 
     // Buy
-    if (day.macd.histogram >= 0 && stockData[index-1].macd.histogram < 0) {
+    const MACD_BUY_SIGNAL = day.macd.histogram >= 0 && stockData[index-1].macd.histogram < 0;
+    const RSI_BUY_SIGNAL = day.rsi <= 30;
+    if (MACD_BUY_SIGNAL && RSI_BUY_SIGNAL) {
       profit -= day.Close;
       investment += day.Close;
       shares++;
@@ -39,9 +28,10 @@ export default function simulateTradingMACD(stockData) {
 
     // Sell
     const MACD_SELL_SIGNAL = day.macd.histogram <= 0 && stockData[index-1].macd.histogram > 0;
+    const RSI_SELL_SIGNAL = day.rsi >= 70;
     const LAST_DAY = index === stockData.length - 1;
     const STOP_LOSS = day.Close <= bought_price * 0.95;
-    if (shares > 0 && (MACD_SELL_SIGNAL || STOP_LOSS || LAST_DAY)) {
+    if (shares > 0 && (MACD_SELL_SIGNAL && RSI_SELL_SIGNAL || STOP_LOSS || LAST_DAY)) {
       profit += shares * day.Close;
       // console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)  (MACD = ${day.macd.MACD.toFixed(2)})`);
       shares = 0;

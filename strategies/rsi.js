@@ -1,6 +1,6 @@
 import { RSI } from 'technicalindicators';
 
-function addRSI(stockData) {
+export function addRSI(stockData) {
   const values = stockData.map(x => x.Close);
   const period = 14;
   const rsi = RSI.calculate({
@@ -21,6 +21,7 @@ export default function simulateTradingRSI(stockData) {
 
   stockData.forEach((day, index) => {
     if (!day.rsi) { return; }
+    if (!day.Close && day.Close !== 0) { return; }
 
     // Buy
     if (shares === 0 && day.rsi <= 30) {
