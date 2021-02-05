@@ -1,9 +1,11 @@
 import fetch from 'node-fetch';
-import fs from 'fs';
-const fsp = fs.promises;
 import parse from 'csv-parse/lib/sync.js';
+import { promises as fsp } from 'fs';
+
 import simulateTradingRSI from './strategies/rsi.js';
 import simulateTradingMACD from './strategies/macd.js';
+import simulateTradingMACDLong from './strategies/macd-long.js';
+import simulateTradingReactive from './strategies/reactive.js';
 
 const chooseRandom = (array) => array[Math.floor(Math.random() * array.length)];
 
@@ -117,11 +119,12 @@ async function generateReport(simFunc, reportId) {
   console.log(`Wrote ${n} simulation results to ${reportName}`);
 }
 
-// generateReport(simulateTradingRSI, 'macd-long');
+generateReport(simulateTradingRSI, 'rsi');
 
 (async function main() {
   const stock = 'AMZN';
   console.log(`Buying ${stock}`);
   let stockData = await getStockData(stock);
+  // simulateTradingRSI(stockData);
   simulateTradingMACD(stockData);
-})();
+})//();

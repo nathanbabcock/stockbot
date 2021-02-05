@@ -1,22 +1,19 @@
 import { MACD } from 'technicalindicators';
 
-/**
- * Adds a MACD poperty to an array of stockData (in place)
- * @param {*} stockData 
- * @returns {*} stockData with MACD added
- */
 function addMACD(stockData) {
   const values = stockData.map(x => x.Close);
-  const slowPeriod = 26
+  const fastPeriod = 12;
+  const slowPeriod = 26;
+  const signalPeriod = 9;
   const macd = MACD.calculate({
     values,
-    fastPeriod: 12,
+    fastPeriod,
     slowPeriod,
-    signalPeriod: 9,
+    signalPeriod,
     SimpleMAOscillator: false,
     SimpleMASignal: false
   });
-  macd.forEach((macd, index) => stockData[index + slowPeriod - 1].macd = macd);
+  macd.forEach((macd, index) => index + slowPeriod < stockData.length && (stockData[index + slowPeriod].macd = macd));
   return stockData;
 }
 
@@ -32,22 +29,21 @@ export default function simulateTradingMACD(stockData) {
     if (!day.macd || !stockData[index-1].macd) { return; }
 
     // Buy
-    if (day.macd.MACD <= 0 && stockData[index-1].macd.MACD > 0) {
+    if (day.macd.histogram >= 0 && stockData[index-1].macd.histogram < 0) {
       profit -= day.Close;
       investment += day.Close;
       shares++;
       bought_price = day.Close;
-      // console.log(`${day.Date.toLocaleDateString()}: Bought 1 share at $${day.Close.toFixed(2)}`);
+      // console.log(`${day.Date.toLocaleDateString()}: Bought 1 share at $${day.Close.toFixed(2)} (MACD = ${day.macd.MACD.toFixed(2)})`);
     }
 
     // Sell
-    const MACD_SELL_SIGNAL = day.macd.MACD >= 0 && stockData[index-1].macd.MACD < 0;
-    const PROFITABLE = day.Close > bought_price;
+    const MACD_SELL_SIGNAL = day.macd.histogram <= 0 && stockData[index-1].macd.histogram > 0;
     const LAST_DAY = index === stockData.length - 1;
-    const STOP_LOSS = day.Close <= bought_price * 0.9;
-    if (shares > 0 && ((MACD_SELL_SIGNAL && PROFITABLE) || STOP_LOSS || LAST_DAY )) {
+    const STOP_LOSS = day.Close <= bought_price * 0.95;
+    if (shares > 0 && (MACD_SELL_SIGNAL || STOP_LOSS || LAST_DAY)) {
       profit += shares * day.Close;
-      // console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)`);
+      // console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)  (MACD = ${day.macd.MACD.toFixed(2)})`);
       shares = 0;
     }
   });

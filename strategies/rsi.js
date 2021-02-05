@@ -7,7 +7,7 @@ function addRSI(stockData) {
     values,
     period,
   });
-  rsi.forEach((rsi, index) => stockData[index + period - 1].rsi = rsi);
+  rsi.forEach((rsi, index) => stockData[index + period].rsi = rsi);
   return stockData;
 }
 
@@ -20,10 +20,10 @@ export default function simulateTradingRSI(stockData) {
   let bought_price;
 
   stockData.forEach((day, index) => {
-    if (!day.macd || !stockData[index-1].macd) { return; }
+    if (!day.rsi) { return; }
 
     // Buy
-    if (day.macd.MACD <= 0 && stockData[index-1].macd.MACD > 0) {
+    if (shares === 0 && day.rsi <= 30) {
       profit -= day.Close;
       investment += day.Close;
       shares++;
@@ -32,11 +32,10 @@ export default function simulateTradingRSI(stockData) {
     }
 
     // Sell
-    const MACD_SELL_SIGNAL = day.macd.MACD >= 0 && stockData[index-1].macd.MACD < 0;
-    const PROFITABLE = day.Close > bought_price;
+    const RSI_SELL_SIGNAL = day.rsi >= 70;
     const LAST_DAY = index === stockData.length - 1;
-    const STOP_LOSS = day.Close <= bought_price * 0.9;
-    if (shares > 0 && ((MACD_SELL_SIGNAL && PROFITABLE) || STOP_LOSS || LAST_DAY )) {
+    const TIGHT_STOP_LOSS = day.Close <= bought_price * 0.99;
+    if (shares > 0 && (RSI_SELL_SIGNAL || TIGHT_STOP_LOSS || LAST_DAY )) {
       profit += shares * day.Close;
       // console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)`);
       shares = 0;

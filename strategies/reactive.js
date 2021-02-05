@@ -18,10 +18,8 @@ export default function simulateTradingReactive(stockData) {
 
     // Sell
     const REACTIVE_SELL_SIGNAL = day.Close < stockData[index-1].Close;
-    const PROFITABLE = day.Close > bought_price;
     const LAST_DAY = index === stockData.length - 1;
-    const STOP_LOSS = day.Close <= bought_price * 0.9;
-    if (shares > 0 && ((REACTIVE_SELL_SIGNAL && PROFITABLE) || STOP_LOSS || LAST_DAY )) {
+    if (shares > 0 && (REACTIVE_SELL_SIGNAL || LAST_DAY)) {
       profit += shares * day.Close;
       // console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)`);
       shares = 0;
