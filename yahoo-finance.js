@@ -1,14 +1,8 @@
-'use strict';
-
 const fetch = require('node-fetch');
 const fs = require('fs');
 const fsp = fs.promises;
 const parse = require('csv-parse/lib/sync');
-const technicalIndicators = require('technicalindicators');
-
-// async function checkCache(symbol) {
-//   return await fsp.access(`stock-data/${symbol}.csv`);
-// }
+const simulateTradingRSI = require('./strategies/rsi');
 
 const chooseRandom = (array) => array[Math.floor(Math.random() * array.length)];
 
@@ -74,123 +68,6 @@ async function getRandomStock() {
   return stock;
 }
 
-/**
- * Adds a MACD poperty to an array of stockData (in place)
- * @param {*} stockData 
- * @returns {*} stockData with MACD added
- */
-function addMACD(stockData) {
-  const values = stockData.map(x => x.Close);
-  const slowPeriod = 26
-  const macd = technicalIndicators.macd({
-    values,
-    fastPeriod: 12,
-    slowPeriod,
-    signalPeriod: 9,
-    SimpleMAOscillator: false,
-    SimpleMASignal: false
-  });
-  macd.forEach((macd, index) => stockData[index + slowPeriod - 1].macd = macd);
-  return stockData;
-}
-
-function simulateTradingMACD(stockData) {
-  let investment = 0;
-  let shares = 0;
-  let profit = 0;
-  let bought_price;
-
-  stockData.forEach((day, index) => {
-    if (!day.macd || !stockData[index-1].macd) { return; }
-
-    // Buy
-    if (day.macd.MACD <= 0 && stockData[index-1].macd.MACD > 0) {
-      profit -= day.Close;
-      investment += day.Close;
-      shares++;
-      bought_price = day.Close;
-      // console.log(`${day.Date.toLocaleDateString()}: Bought 1 share at $${day.Close.toFixed(2)}`);
-    }
-
-    // Sell
-    const MACD_SELL_SIGNAL = day.macd.MACD >= 0 && stockData[index-1].macd.MACD < 0;
-    const PROFITABLE = day.Close > bought_price;
-    const LAST_DAY = index === stockData.length - 1;
-    const STOP_LOSS = day.Close <= bought_price * 0.9;
-    if (shares > 0 && ((MACD_SELL_SIGNAL && PROFITABLE) || STOP_LOSS || LAST_DAY )) {
-      profit += shares * day.Close;
-      // console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)`);
-      shares = 0;
-    }
-  });
-
-  let roi = ((profit / investment) * 100).toFixed(2);
-  console.log(`$${profit.toFixed(2)} (${roi}% return)`);
-  return { investment, profit, roi };
-}
-
-function simulateTradingMaxHold(stockData) {
-  let investment = 0;
-  let shares = 0;
-  let profit = 0;
-
-  // Buy
-  const firstDay = stockData[0];
-  profit -= firstDay.Close;
-  investment += firstDay.Close;
-  shares++;
-
-  // Sell
-  const lastDay = stockData[stockData.length - 1];
-  profit += shares * lastDay.Close;
-  shares = 0;
-
-  if (isNaN(profit)) profit = 0;
-  if (isNaN(investment)) investment = 0;
-
-  let roi = ((profit / investment) * 100).toFixed(2);
-  console.log(`$${profit.toFixed(2)} (${roi}% return)`);
-  return { investment, profit, roi };
-}
-
-function simulateTradingReactive(stockData) {
-  let investment = 0;
-  let shares = 0;
-  let profit = 0;
-  let bought_price;
-
-  stockData.forEach((day, index) => {
-    if (index === 0) { return; }
-
-    // Buy
-    if (day.Close > stockData[index-1].Close && shares === 0) {
-      profit -= day.Close;
-      investment += day.Close;
-      shares++;
-      bought_price = day.Close;
-      // console.log(`${day.Date.toLocaleDateString()}: Bought 1 share at $${day.Close.toFixed(2)}`);
-    }
-
-    // Sell
-    const REACTIVE_SELL_SIGNAL = day.Close < stockData[index-1].Close;
-    const PROFITABLE = day.Close > bought_price;
-    const LAST_DAY = index === stockData.length - 1;
-    const STOP_LOSS = day.Close <= bought_price * 0.9;
-    if (shares > 0 && ((REACTIVE_SELL_SIGNAL && PROFITABLE) || STOP_LOSS || LAST_DAY )) {
-      profit += shares * day.Close;
-      // console.log(`${day.Date.toLocaleDateString()}: Sold ${shares} share(s) at $${day.Close.toFixed(2)} ea. (${(((day.Close - bought_price) / bought_price) * 100).toFixed(2)}%)`);
-      shares = 0;
-    }
-  });
-
-  if (isNaN(profit)) profit = 0;
-  if (isNaN(investment)) investment = 0;
-
-  let roi = ((profit / investment) * 100).toFixed(2);
-  console.log(`$${profit.toFixed(2)} (${roi}% return)`);
-  return { investment, profit, roi };
-}
-
 async function harvestData() {
   let manifest = await readCSV('stock-data/NYSE_manifest.csv');
   let failed = ['Symbol'];
@@ -221,7 +98,7 @@ async function generateReport(simFunc, reportId) {
   // Simulation
   for (const stock of manifest) {
     if (blacklist.includes(stock.Symbol)) continue;
-    let stockData = addMACD(await getStockData(stock.Symbol));
+    let stockData = await getStockData(stock.Symbol)
     const simulation = await simFunc(stockData);
     report += `${stock.Symbol},${simulation.investment},${simulation.profit},${simulation.roi}\n`;
     total_investment += simulation.investment;
@@ -239,11 +116,11 @@ async function generateReport(simFunc, reportId) {
   console.log(`Wrote ${n} simulation results to ${reportName}`);
 }
 
-generateReport(simulateTradingReactive, 'reactive');
+// generateReport(simulateTradingRSI, 'macd-long');
 
 (async function main() {
-  const stock = 'HYLN';
+  const stock = 'AMZN';
   console.log(`Buying ${stock}`);
   let stockData = await getStockData(stock);
-  simulateTradingReactive(stockData);
-})//();
+  simulateTradingRSI(stockData);
+})();
