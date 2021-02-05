@@ -1,4 +1,4 @@
-module.exports = function simulateTradingMaxHold(stockData) {
+export default function simulateTradingMaxHold(stockData) {
   let investment = 0;
   let shares = 0;
   let profit = 0;

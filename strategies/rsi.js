@@ -1,9 +1,9 @@
-const technicalIndicators = require('technicalindicators');
+import { RSI } from 'technicalindicators';
 
 function addRSI(stockData) {
   const values = stockData.map(x => x.Close);
   const period = 14;
-  const rsi = technicalIndicators.rsi({
+  const rsi = RSI.calculate({
     values,
     period,
   });
@@ -11,7 +11,7 @@ function addRSI(stockData) {
   return stockData;
 }
 
-module.exports = function simulateTradingRSI(stockData) {
+export default function simulateTradingRSI(stockData) {
   stockData = addRSI(stockData);
 
   let investment = 0;

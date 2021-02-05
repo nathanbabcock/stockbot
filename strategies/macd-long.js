@@ -1,9 +1,9 @@
-const technicalIndicators = require('technicalindicators');
+import { MACD } from 'technicalindicators';
 
 function addMACDLong(stockData) {
   const values = stockData.map(x => x.Close);
   const slowPeriod = 50
-  const macd = technicalIndicators.macd({
+  const macd = MACD.calculate({
     values,
     fastPeriod: 200,
     slowPeriod,
@@ -15,7 +15,7 @@ function addMACDLong(stockData) {
   return stockData;
 }
 
-module.exports = function simulateTradingMACDLong(stockData) {
+export default function simulateTradingMACDLong(stockData) {
   stockData = addMACDLong(stockData);
 
   let investment = 0;

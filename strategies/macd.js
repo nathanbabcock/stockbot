@@ -1,4 +1,4 @@
-const technicalIndicators = require('technicalindicators');
+import { MACD } from 'technicalindicators';
 
 /**
  * Adds a MACD poperty to an array of stockData (in place)
@@ -8,7 +8,7 @@ const technicalIndicators = require('technicalindicators');
 function addMACD(stockData) {
   const values = stockData.map(x => x.Close);
   const slowPeriod = 26
-  const macd = technicalIndicators.macd({
+  const macd = MACD.calculate({
     values,
     fastPeriod: 12,
     slowPeriod,
@@ -20,7 +20,7 @@ function addMACD(stockData) {
   return stockData;
 }
 
-module.exports = function simulateTradingMACD(stockData) {
+export default function simulateTradingMACD(stockData) {
   stockData = addMACD(stockData);
 
   let investment = 0;

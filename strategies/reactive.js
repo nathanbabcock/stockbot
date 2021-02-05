@@ -1,4 +1,4 @@
-module.exports = function simulateTradingReactive(stockData) {
+export default function simulateTradingReactive(stockData) {
   let investment = 0;
   let shares = 0;
   let profit = 0;

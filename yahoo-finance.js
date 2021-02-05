@@ -1,8 +1,9 @@
-const fetch = require('node-fetch');
-const fs = require('fs');
+import fetch from 'node-fetch';
+import fs from 'fs';
 const fsp = fs.promises;
-const parse = require('csv-parse/lib/sync');
-const simulateTradingRSI = require('./strategies/rsi');
+import parse from 'csv-parse/lib/sync.js';
+import simulateTradingRSI from './strategies/rsi.js';
+import simulateTradingMACD from './strategies/macd.js';
 
 const chooseRandom = (array) => array[Math.floor(Math.random() * array.length)];
 
@@ -122,5 +123,5 @@ async function generateReport(simFunc, reportId) {
   const stock = 'AMZN';
   console.log(`Buying ${stock}`);
   let stockData = await getStockData(stock);
-  simulateTradingRSI(stockData);
+  simulateTradingMACD(stockData);
 })();
