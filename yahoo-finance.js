@@ -124,11 +124,95 @@ async function generateReport(simFunc, reportId) {
   console.log(`Wrote ${n} simulation results to ${reportName}`);
 }
 
-generateReport(simulateTradingMultiSMA, 'multi-sma');
+export function addROI(stockData, period, key) {
+  for (let i = period; i < stockData.length; i++) {
+    stockData[i][key] = (stockData[i].Close - stockData[i - period].Close) / (stockData[i - period].Close);
+  }
+  return stockData;
+}
 
-(async function main() {
-  const stock = 'MSFT';
-  console.log(`Buying ${stock}`);
-  let stockData = await getStockData(stock);
-  simulateTradingMultiSMA(stockData);
-})//();
+export async function simulateTradingROI() {
+  let manifest = await readCSV('stock-data/NYSE_manifest.csv');
+  // manifest = manifest.slice(0, 30);
+  // let manifest = [{Symbol: 'MSFT'}];
+  let blacklist = (await readCSV('stock-data/404.csv')).map(x => x.Symbol);
+  let min_date = new Date();
+  const period = 30;
+
+  let timeSeries = [];
+
+  for (const stock of manifest) {
+    if (blacklist.includes(stock.Symbol)) continue;
+    const stockData = stock.stockData = await getStockData(stock.Symbol);
+
+    console.log(`Calculating ${period}-day ROI for ${stock.Symbol}`);
+    for (let i = period; i < stockData.length; i++) {
+      let day = stockData[i];
+      const roi = (stockData[i].Close - stockData[i - period].Close) / (stockData[i - period].Close);
+      let timeSeriesEntry = timeSeries.find(x => x.date === day.Date);
+      if (!timeSeriesEntry) {
+        const newEntry = {date: day.Date, roiData: []}
+        timeSeries.push(newEntry);
+        timeSeriesEntry = newEntry;
+      }
+      timeSeriesEntry.roiData.push({stock: stock.Symbol, roi, price: day.Close});
+    }
+  }
+
+  console.log('Sorting by date');
+  timeSeries.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  console.log('Sorting daily stocks by ROI');
+  timeSeries.forEach(day => day.roiData.sort((a, b) => a.roi - b.roi));    
+
+  let investment = 0;
+  let profit = 0;
+  let portfolio = [];
+  const PORTFOLIO_SIZE = 10;
+
+  // Simulate trading
+  timeSeries.forEach(day => {
+    console.log(day.date);
+    if (!day.roiData) return;
+    const topStocks = day.roiData.slice(0, PORTFOLIO_SIZE);
+    topStocks.forEach(topStock => {
+      const ownedStock = portfolio.find(asset => asset.stock === topStock.stock);
+      if (!ownedStock) {
+        // Buy
+        investment += topStock.price;
+        profit -= topStock.price;
+        portfolio.push(topStock);
+        console.log(`Buying ${topStock.stock} for ${topStock.price}`);
+      } else {
+        // Update
+        ownedStock.price = topStock.price;
+        ownedStock.toi = topStock.roi;
+      }
+    });
+    portfolio.sort((a, b) => a.roi = b.roi);
+    if (portfolio.length > PORTFOLIO_SIZE) {
+      for (let i = PORTFOLIO_SIZE; i < portfolio.length; i++) {
+        // Sell
+        profit += portfolio[i].price;
+        console.log(`Selling ${portfolio[i].stock} for ${portfolio[i].price}`);
+      }
+      portfolio = portfolio.slice(0, PORTFOLIO_SIZE);
+    }
+  });
+
+  console.log(`Investment: $${investment}`);
+  console.log(`Profit: $${profit}`);
+  console.log(`Total ROI: $${(((profit - investment) / investment) * 100).toFixed(2)}%`);
+  console.log(`Ending portfolio: ${portfolio.map(x => x.stock)}`);
+}
+
+await simulateTradingROI();
+
+// generateReport(simulateTradingMultiSMA, 'multi-sma');
+
+// (async function main() {
+//   const stock = 'MSFT';
+//   console.log(`Buying ${stock}`);
+//   let stockData = await getStockData(stock);
+//   simulateTradingMultiSMA(stockData);
+// })//();
