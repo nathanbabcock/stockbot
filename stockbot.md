@@ -6,18 +6,23 @@
 
 ## Plan
 - [X] Download & cache historical price data CSVs from Yahoo Finance and/or Alpha Vantage
-- [X] Code a technical indicator (MACD) and verify it works
-- [X] Simulate automated MACD trading on entire stock history and analyze profits
 - [X] Download entire Yahoo Finance stock price history database
   - [X] Identify 404 stocks
   - [X] Use a VPN just in case
-- [X] Repeat MACD for all 3000+ stocks and generate total return report
+- [X] Code a technical indicator (MACD) and verify it works
+  - [X] Simulate automated MACD trading on entire stock history and analyze profits
+  - [X] Repeat MACD for all 3000+ stocks and generate total return report
 - [X] Write max-hold strategy
-- [X] Repeat max-hold strategy for all 3000+ stocks and generate report
+  - [X] Repeat max-hold strategy for all 3000+ stocks and generate report
 - [X] Write reactive strategy
-- [X] Repeat reactive strategy for all 3000+ stocks and generate report
-- [ ] Cluster analysis for most & least profitable stocks
+  - [X] Repeat reactive strategy for all 3000+ stocks and generate report
+- [X] RSI
+- [X] MACD-long
+- [X] MACD-RSI
+- [ ] Multi-SMA
+- [ ] Reddit correlation
 - [ ] `argmax` for technical indicator parameters
+- [ ] Cluster analysis for most & least profitable stocks
 - [ ] Rinse and repeat for **as many technical indicators as possible**
 - [ ] Tournament-style/survival of the fittest competition between determinstic trading strategies
 
