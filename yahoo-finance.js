@@ -4,12 +4,15 @@ import fs from 'fs';
 const fsp = fs.promises;
 // import { promises as fsp } from 'fs';
 
+import { AverageGain, AverageLoss, SD } from 'technicalindicators';
+
 import simulateTradingRSI from './strategies/rsi.js';
 import simulateTradingMACD from './strategies/macd.js';
 import simulateTradingMACDLong from './strategies/macd-long.js';
 import simulateTradingReactive from './strategies/reactive.js';
 import simulateTradingMACD_RSI from './strategies/macd-rsi.js';
 import simulateTradingMultiSMA from './strategies/multi-sma.js';
+import { standardDeviation } from './util.js';
 
 const chooseRandom = (array) => array[Math.floor(Math.random() * array.length)];
 
@@ -133,27 +136,48 @@ export function addROI(stockData, period, key) {
 
 export async function simulateTradingROI() {
   let manifest = await readCSV('stock-data/NYSE_manifest.csv');
-  // manifest = manifest.slice(0, 100);
+  // manifest = manifest.slice(0, 10);
   // let manifest = [{Symbol: 'MSFT'}];
   let blacklist = (await readCSV('stock-data/404.csv')).map(x => x.Symbol);
   let min_date = new Date();
-  const PERIOD = 365;
+  const PERIOD = 60;
   const PORTFOLIO_SIZE = 100;
+
+  console.log(`PERIOD = ${PERIOD}`);
+  console.log(`PORTFOLIO_SIZE = ${PORTFOLIO_SIZE}`);
 
   let timeSeries = [];
 
   for (const stock of manifest) {
     if (blacklist.includes(stock.Symbol)) continue;
-    const stockData = stock.stockData = await getStockData(stock.Symbol);
+    let stockData = stock.stockData = await getStockData(stock.Symbol);
+    stockData = stock.stockData = stockData.filter(x => !isNaN(x.Close) && x.Close !== null);
 
-    console.log(`Calculating ${PERIOD}-day ROI for ${stock.Symbol}`);
+    console.log(`Calculating average gain/loss and standard deviation for ${stock.Symbol}`);
+
+    const input = {
+      period: PERIOD,
+      values: stockData.map(x => x.Close),
+    };
+
+    const averageGain = AverageGain.calculate(input);
+    const averageLoss = AverageLoss.calculate(input);
+    const averageChange = averageGain.map((x, index) => x - averageLoss[index]);
+    // console.log(`Sample averageChange for ${stock.Symbol} = `, averageChange.slice(0, 10));
+    const averageReturn = averageChange.map((x, index) => x / stockData[PERIOD + index].Close);
+    // console.log(`Sample averageReturn for ${stock.Symbol} = `, averageReturn.slice(0, 10));
+    const averageReturnSD = standardDeviation(averageReturn);
+    // console.log(`averageReturnSD`, averageReturnSD);
+    const score = averageReturn.map(x => x - averageReturnSD);
+    // console.log(`Sample ROI score for ${stock.Symbol} = `, score.slice(0, 10));
+
     for (let i = PERIOD; i < stockData.length; i++) {
       let day = stockData[i];
       if (isNaN(day.Close)) { continue; }
-      const roi = (stockData[i].Close - stockData[i - PERIOD].Close) / (stockData[i - PERIOD].Close);
+      const roi = score[i - PERIOD];
       let timeSeriesEntry = timeSeries.find(x => x.date.getTime() === day.Date.getTime());
       if (!timeSeriesEntry) {
-        const newEntry = {date: day.Date, roiData: []}
+        const newEntry = {date: day.Date, roiData: []};
         timeSeries.push(newEntry);
         timeSeriesEntry = newEntry;
       }

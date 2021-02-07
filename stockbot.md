@@ -12,6 +12,7 @@
 - [X] Code a technical indicator (MACD) and verify it works
   - [X] Simulate automated MACD trading on entire stock history and analyze profits
   - [X] Repeat MACD for all 3000+ stocks and generate total return report
+- [X] Rinse and repeat for **as many technical indicators as possible**
 - [X] Write max-hold strategy
   - [X] Repeat max-hold strategy for all 3000+ stocks and generate report
 - [X] Write reactive strategy
@@ -19,11 +20,12 @@
 - [X] RSI
 - [X] MACD-long
 - [X] MACD-RSI
-- [ ] Multi-SMA
+- [X] Multi-SMA
+- [X] Naive ROI
+- [X] AVG ROI + STDDEV
+- [ ] ~~`argmax` for technical indicator parameters~~ -- no strategies were good enough to merit further exploration
 - [ ] Reddit correlation
-- [ ] `argmax` for technical indicator parameters
 - [ ] Cluster analysis for most & least profitable stocks
-- [ ] Rinse and repeat for **as many technical indicators as possible**
 - [ ] Tournament-style/survival of the fittest competition between determinstic trading strategies
 
 ## Naïve strategies
