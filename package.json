@@ -5,6 +5,7 @@
   "main": "yahoo-finance.js",
   "type": "module",
   "scripts": {
+    "start": "node yahoo-finance.js 2>&1 | tee logs/latest.log",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

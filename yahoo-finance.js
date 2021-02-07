@@ -137,7 +137,8 @@ export async function simulateTradingROI() {
   // let manifest = [{Symbol: 'MSFT'}];
   let blacklist = (await readCSV('stock-data/404.csv')).map(x => x.Symbol);
   let min_date = new Date();
-  const period = 365;
+  const PERIOD = 365;
+  const PORTFOLIO_SIZE = 100;
 
   let timeSeries = [];
 
@@ -145,11 +146,11 @@ export async function simulateTradingROI() {
     if (blacklist.includes(stock.Symbol)) continue;
     const stockData = stock.stockData = await getStockData(stock.Symbol);
 
-    console.log(`Calculating ${period}-day ROI for ${stock.Symbol}`);
-    for (let i = period; i < stockData.length; i++) {
+    console.log(`Calculating ${PERIOD}-day ROI for ${stock.Symbol}`);
+    for (let i = PERIOD; i < stockData.length; i++) {
       let day = stockData[i];
       if (isNaN(day.Close)) { continue; }
-      const roi = (stockData[i].Close - stockData[i - period].Close) / (stockData[i - period].Close);
+      const roi = (stockData[i].Close - stockData[i - PERIOD].Close) / (stockData[i - PERIOD].Close);
       let timeSeriesEntry = timeSeries.find(x => x.date.getTime() === day.Date.getTime());
       if (!timeSeriesEntry) {
         const newEntry = {date: day.Date, roiData: []}
@@ -175,7 +176,6 @@ export async function simulateTradingROI() {
   let investment = 0;
   let profit = 0;
   let portfolio = [];
-  const PORTFOLIO_SIZE = 10;
 
   // Simulate trading
   timeSeries.forEach(day => {
@@ -208,7 +208,7 @@ export async function simulateTradingROI() {
       console.log(`${day.date.toLocaleDateString()}: Selling ${portfolio[i].stock} for ${portfolio[i].price.toFixed(2)} (return = ${(((portfolio[i].price - portfolio[i].boughtPrice) / portfolio[i].boughtPrice) * 100).toFixed(2)}%, roi = ${portfolio[i].roi.toFixed(2)})`);
     }
     portfolio = portfolio.slice(0, PORTFOLIO_SIZE);
-    console.log(`${day.date.toLocaleDateString()}: EOD portfolio = ${portfolio.map(x => `${x.stock} (${x.roi.toFixed(2)})`)}`);
+    // console.log(`${day.date.toLocaleDateString()}: EOD portfolio = ${portfolio.map(x => `${x.stock} (${x.roi.toFixed(2)})`)}`);
   });
 
   console.log('============');
