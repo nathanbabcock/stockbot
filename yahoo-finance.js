@@ -133,11 +133,11 @@ export function addROI(stockData, period, key) {
 
 export async function simulateTradingROI() {
   let manifest = await readCSV('stock-data/NYSE_manifest.csv');
-  manifest = manifest.slice(0, 100);
+  // manifest = manifest.slice(0, 100);
   // let manifest = [{Symbol: 'MSFT'}];
   let blacklist = (await readCSV('stock-data/404.csv')).map(x => x.Symbol);
   let min_date = new Date();
-  const period = 30;
+  const period = 365;
 
   let timeSeries = [];
 
@@ -148,6 +148,7 @@ export async function simulateTradingROI() {
     console.log(`Calculating ${period}-day ROI for ${stock.Symbol}`);
     for (let i = period; i < stockData.length; i++) {
       let day = stockData[i];
+      if (isNaN(day.Close)) { continue; }
       const roi = (stockData[i].Close - stockData[i - period].Close) / (stockData[i - period].Close);
       let timeSeriesEntry = timeSeries.find(x => x.date.getTime() === day.Date.getTime());
       if (!timeSeriesEntry) {
@@ -179,30 +180,35 @@ export async function simulateTradingROI() {
   // Simulate trading
   timeSeries.forEach(day => {
     if (!day.roiData) return;
+
+    // Update portfolio prices
+    portfolio.forEach(asset => {
+      const latest = day.roiData.find(data => data.stock === asset.stock);
+      if (!latest) { asset.roi = 0; return; }
+      asset.roi = latest.roi;
+      asset.price = latest.price;
+    });
+
+    // Buy (all top stocks which aren't already owned)
     const topStocks = day.roiData.slice(0, PORTFOLIO_SIZE);
     topStocks.forEach(topStock => {
-      const ownedStock = portfolio.find(asset => asset.stock === topStock.stock);
-      if (!ownedStock) {
-        // Buy
+      if (!portfolio.find(asset => asset.stock === topStock.stock)) {
         investment += topStock.price;
         profit -= topStock.price;
+        topStock.boughtPrice = topStock.price;
         portfolio.push(topStock);
-        console.log(`Buying ${topStock.stock} for ${topStock.price} (roi = ${topStock.roi})`);
-      } else {
-        // Update
-        ownedStock.price = topStock.price;
-        ownedStock.toi = topStock.roi;
+        console.log(`${day.date.toLocaleDateString()}: Buying ${topStock.stock} for ${topStock.price} (roi = ${topStock.roi.toFixed(2)})`);
       }
     });
+
+    // Sell (extra stocks which don't make the cut)
     portfolio.sort((a, b) => b.roi - a.roi);
-    if (portfolio.length > PORTFOLIO_SIZE) {
-      for (let i = PORTFOLIO_SIZE; i < portfolio.length; i++) {
-        // Sell
-        profit += portfolio[i].price;
-        console.log(`${day.date.toLocaleDateString()}: Selling ${portfolio[i].stock} for ${portfolio[i].price.toFixed(2)} (roi = ${portfolio[i].roi})`);
-      }
-      portfolio = portfolio.slice(0, PORTFOLIO_SIZE);
+    for (let i = PORTFOLIO_SIZE; i < portfolio.length; i++) {
+      profit += portfolio[i].price;
+      console.log(`${day.date.toLocaleDateString()}: Selling ${portfolio[i].stock} for ${portfolio[i].price.toFixed(2)} (return = ${(((portfolio[i].price - portfolio[i].boughtPrice) / portfolio[i].boughtPrice) * 100).toFixed(2)}%, roi = ${portfolio[i].roi.toFixed(2)})`);
     }
+    portfolio = portfolio.slice(0, PORTFOLIO_SIZE);
+    console.log(`${day.date.toLocaleDateString()}: EOD portfolio = ${portfolio.map(x => `${x.stock} (${x.roi.toFixed(2)})`)}`);
   });
 
   console.log('============');
